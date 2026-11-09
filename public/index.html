@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#111111">
+    <title>FindIt - Campus Lost &amp; Found</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="manifest" href="manifest.json">
+</head>
+
+<body>
+    <!-- Top bar: app name, and the menu once you are logged in -->
+    <header class="topbar">
+        <span class="wordmark">FindIt</span>
+        <span class="campus" id="campusLabel">Campus Lost &amp; Found</span>
+
+        <!-- Navigation menu: hidden until the user logs in (app.js shows it) -->
+        <nav class="nav" id="mainNav" hidden>
+            <button class="nav-link" data-go="dashboard">Home</button>
+            <button class="nav-link" data-go="browse">Browse</button>
+            <button class="nav-link" data-go="report">Report</button>
+            <button class="nav-link" data-go="myposts">My posts</button>
+            <button class="nav-link" id="logoutButton">Log out</button>
+        </nav>
+    </header>
+
+    <!-- Shown by app.js when there is no internet connection -->
+    <div class="offline-banner" id="offlineBanner" role="status" hidden>
+        You're offline. Showing the last saved data. Posting and messages need a connection.
+    </div>
+
+    <!--
+        The app is ONE page with several "screens" (sections).
+        app.js shows one screen at a time and hides the others.
+    -->
+    <main>
+
+        <!-- SCREEN: Home (the Week 1 landing page) -->
+        <section class="screen layout" id="screen-home">
+            <div class="intro">
+                <h1>Lost it? FindIt.</h1>
+
+                <p class="lead">
+                    Report a lost ID card, keys or charger, and see what other
+                    students have handed in. One place for everything left behind.
+                </p>
+
+                <button id="startButton">Get started</button>
+
+                <!-- JavaScript writes a message here when the button is clicked -->
+                <p id="message" class="message" aria-live="polite"></p>
+            </div>
+
+            <!-- Right side: the latest found items (filled in by app.js) -->
+            <div class="found" aria-labelledby="found-title">
+                <p class="count"><span id="itemCount">0</span> items waiting to go home</p>
+                <h2 id="found-title">Handed in recently</h2>
+                <ul class="items" id="homeItems"></ul>
+            </div>
+        </section>
+
+        <!-- SCREEN: Login / Register (Feature 1) -->
+        <section class="screen page narrow" id="screen-login" hidden>
+            <h2 class="page-title" id="authTitle">Log in</h2>
+            <p class="muted">Use your university email address.</p>
+
+            <form id="authForm" class="form">
+                <!-- Only shown when creating an account -->
+                <label id="nameField" hidden>
+                    Full name
+                    <input id="authName" type="text" autocomplete="name" maxlength="50">
+                </label>
+                <label>
+                    University email
+                    <input id="authEmail" type="email" required autocomplete="email" placeholder="name@university.edu">
+                </label>
+                <label>
+                    Password
+                    <input id="authPassword" type="password" required minlength="6" autocomplete="current-password">
+                </label>
+                <p class="error" id="authError" role="alert"></p>
+                <button type="submit" id="authSubmit">Log in</button>
+            </form>
+
+            <p>
+                <span id="authSwitchText">No account yet?</span>
+                <button type="button" class="link-button" id="authSwitch">Create one</button>
+            </p>
+        </section>
+
+        <!-- SCREEN: Dashboard -->
+        <section class="screen page" id="screen-dashboard" hidden>
+            <h2 class="page-title">Hi, <span id="userName"></span></h2>
+
+            <div class="stats">
+                <div class="stat"><span id="statOpen">0</span> items waiting</div>
+                <div class="stat"><span id="statMine">0</span> my posts</div>
+                <div class="stat"><span id="statReturned">0</span> returned home</div>
+            </div>
+
+            <div class="actions">
+                <button data-go="report" data-type="lost">I lost something</button>
+                <button data-go="report" data-type="found" class="btn-ghost">I found something</button>
+                <button data-go="browse" class="btn-ghost">Browse items</button>
+            </div>
+
+            <h3>Recently posted</h3>
+            <div class="card-grid" id="recentItems"></div>
+        </section>
+
+        <!-- SCREEN: Browse and search (Feature 3) -->
+        <section class="screen page" id="screen-browse" hidden>
+            <h2 class="page-title">Browse items</h2>
+
+            <div class="filters">
+                <label class="filter">
+                    Search
+                    <input type="search" id="searchText" placeholder="e.g. keys, wallet, charger">
+                </label>
+                <label class="filter">
+                    Lost or found
+                    <select id="filterType">
+                        <option value="">Both</option>
+                        <option value="lost">Lost</option>
+                        <option value="found">Found</option>
+                    </select>
+                </label>
+                <label class="filter">
+                    Category
+                    <select id="filterCategory">
+                        <option value="">All categories</option>
+                    </select>
+                </label>
+                <label class="filter">
+                    Place
+                    <select id="filterLocation">
+                        <option value="">All places</option>
+                    </select>
+                </label>
+                <label class="filter">
+                    From date
+                    <input type="date" id="filterDate">
+                </label>
+            </div>
+            <label class="check">
+                <input type="checkbox" id="filterShowReturned"> Show items already returned
+            </label>
+
+            <p class="muted" id="resultCount"></p>
+            <div class="card-grid" id="browseResults"></div>
+        </section>
+
+        <!-- SCREEN: Item details + claim / contact (Feature 4) -->
+        <section class="screen page" id="screen-details" hidden>
+            <button class="btn-ghost btn-small" id="backButton">&larr; Back</button>
+
+            <!-- app.js fills this with the item's photo and information -->
+            <div id="detailsContent"></div>
+
+            <form id="claimForm" class="form narrow-form" hidden>
+                <h3 id="claimTitle">This is mine</h3>
+                <label>
+                    Message to the person who posted it
+                    <textarea id="claimMessage" rows="3" required maxlength="300"
+                        placeholder="Describe the item so they know it's yours, and when you can collect it."></textarea>
+                </label>
+                <p class="error" id="claimError" role="alert"></p>
+                <button type="submit">Send claim</button>
+            </form>
+
+            <p class="muted" id="detailsNote"></p>
+        </section>
+
+        <!-- SCREEN: Report an item (Feature 2) - also used to edit a post -->
+        <section class="screen page narrow" id="screen-report" hidden>
+            <h2 class="page-title" id="reportTitle">Report an item</h2>
+
+            <form id="reportForm" class="form">
+                <fieldset class="toggle">
+                    <legend>Did you lose it or find it?</legend>
+                    <label><input type="radio" name="type" value="lost" checked> I lost it</label>
+                    <label><input type="radio" name="type" value="found"> I found it</label>
+                </fieldset>
+
+                <label>
+                    Item name
+                    <input id="itemName" type="text" required maxlength="60" placeholder="e.g. Black leather wallet">
+                </label>
+                <label>
+                    Category
+                    <select id="itemCategory" required></select>
+                </label>
+                <label>
+                    Description
+                    <textarea id="itemDescription" rows="3" maxlength="300"
+                        placeholder="Colour, brand, anything that helps identify it"></textarea>
+                </label>
+                <label>
+                    Location
+                    <input id="itemLocation" type="text" required maxlength="60" list="placeList"
+                        placeholder="e.g. Library, 2nd floor">
+                </label>
+                <!-- Suggestions shown while typing the location -->
+                <datalist id="placeList"></datalist>
+                <label>
+                    Date
+                    <input id="itemDate" type="date" required>
+                </label>
+                <label>
+                    Photo (optional)
+                    <input id="itemPhoto" type="file" accept="image/*">
+                </label>
+                <img id="photoPreview" class="photo-preview" alt="Preview of the chosen photo" hidden>
+
+                <p class="error" id="reportError" role="alert"></p>
+
+                <div class="actions">
+                    <button type="submit" id="reportSubmit">Post item</button>
+                    <button type="button" class="btn-ghost" data-go="dashboard">Cancel</button>
+                </div>
+            </form>
+        </section>
+
+        <!-- SCREEN: Confirmation -->
+        <section class="screen page narrow center" id="screen-confirm" hidden>
+            <div class="tick" aria-hidden="true">&#10003;</div>
+            <h2 class="page-title" id="confirmTitle">Done</h2>
+            <p id="confirmText"></p>
+            <div class="actions">
+                <button id="confirmView">View item</button>
+                <button class="btn-ghost" data-go="dashboard">Back to dashboard</button>
+            </div>
+        </section>
+
+        <!-- SCREEN: My posts (Feature 5) -->
+        <section class="screen page" id="screen-myposts" hidden>
+            <h2 class="page-title">My posts</h2>
+            <div class="post-list" id="myPostsList"></div>
+        </section>
+
+    </main>
+
+    <script src="app.js"></script>
+</body>
+
+</html>

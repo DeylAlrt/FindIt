@@ -1,0 +1,15 @@
+{
+  "name": "findit",
+  "version": "1.0.0",
+  "description": "FindIt - Campus Lost & Found PWA (Express + MongoDB backend)",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "license": "ISC",
+  "dependencies": {
+    "express": "^5.3.0",
+    "mongodb": "^7.8.0"
+  }
+}
